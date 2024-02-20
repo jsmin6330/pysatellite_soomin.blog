@@ -1,51 +1,48 @@
 #!/bin/bash
 
-# rm & rmi
-# figlet remove all
-figlet remove blog-a , blog-b, lb
+# var
+BLOG_1="pysatellite-blog-a.internal"
+BLOG_2="pysatellite-blog-b.internal"
+BLOG_1_IMG_NAME="blog-1-img"
+BLOG_2_IMG_NAME="blog-2-img"
+
+# start
+# sl -aF
+figlet -f bubble start
+
+#############################
+figlet remove all
 sudo docker stop $(sudo docker ps -q)
-# sudo docker rm $(sudo docker ps -a -q) # 전체 컨테이너 삭제
-sudo docker rm blog-a blog-b lb
-# sudo docker rmi $(sudo docker images -q) # 전체 이미지 삭제
-sudo docker rmi blog-a blog-b lb
+sudo docker rm $(sudo docker ps -a -q)
+sudo docker rmi $(sudo docker images -q)
+sudo docker network rm blog-net
 
-# network remove
-figlet network remove blogab-lb
-sudo docker network rm blogab-lb
+#############################
+# https://docs.docker.com/engine/reference/commandline/image_build/
+figlet build
+sudo docker image build -t $BLOG_1_IMG_NAME -f docker/blog-a/Dockerfile docker/blog-a
+sudo docker image build -t $BLOG_2_IMG_NAME -f docker/blog-b/Dockerfile docker/blog-b
+sudo docker image build -t blog-lb -f docker/lb/Dockerfile docker/lb
 
-# build
-figlet build blog-a , blog-b
-sudo docker build -t blog-a -f docker/blog-a/Dockerfile docker/blog-a
-sudo docker build -t blog-b -f docker/blog-b/Dockerfile docker/blog-b
+#############################
+# https://docs.docker.com/engine/reference/commandline/network_create/
+figlet create network
+sudo docker network create -d bridge blog-net
 
-# run
-figlet run blog-a , blog-b
-sudo docker run -d --name blog-a -p 8001:80 blog-a
-sudo docker run -d --name blog-b -p 8002:80 blog-b
+#############################
+# https://docs.docker.com/engine/reference/commandline/container_run/
+figlet run
+sudo docker container run -d --name $BLOG_1 -p 8001:80 --network blog-net $BLOG_1_IMG_NAME
+sudo docker container run -d --name $BLOG_2 -p 8002:80 --network blog-net $BLOG_2_IMG_NAME
+sudo docker container run -d --name blog-lb-1 -p 8000:80 --network blog-net blog-lb
 
-# network
-figlet network blogab-lb
-sudo docker network create blogab-lb
-sudo docker network connect blogab-lb blog-a
-sudo docker network connect blogab-lb blog-b
-sudo docker network inspect blogab-lb
-
-# lb build
-figlet build lb
-sudo docker build -t lb -f docker/lb/Dockerfile docker/lb
-
-# run
-figlet run lb
-sudo docker run -d --name lb -p 8003:80 lb
-
-# ps
+#############################
 figlet ps
-sudo docker ps
+sudo docker container ps
 
-# network
-figlet network lb
-sudo docker start lb
-sudo docker network connect blogab-lb lb
-sudo docker network inspect blogab-lb
+figlet -f TEST
+curl http://localhost:8000 | grep h1
+curl http://localhost:8000 | grep h1
 
-
+# end
+figlet -f bubble END
